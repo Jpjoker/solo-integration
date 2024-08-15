@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+myenv/
+*.env
+
+# Virtual environment
+venv/
+
+# WordPress
+*.log
+wp-config.php
+.htaccess
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Docker
+.docker/
+docker-compose.override.yml

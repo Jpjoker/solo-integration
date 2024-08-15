@@ -6,9 +6,11 @@
 #    ports:
 #      - "8069:8069"
 #    environment:
-#      - HOST=db
-#      - USER=odoo
-#      - PASSWORD=odoo
+#      - DB_HOST=db
+#      - DB_PORT=5432
+#      - DB_USER=odoo
+#      - DB_PASSWORD=odoo
+#      - DB_NAME=odoo
 #    depends_on:
 #      - db
 #    volumes:
@@ -54,26 +56,31 @@
 #volumes:
 #  odoo-db-data:
 #  wp-db-data:
+
 version: '3.8'
 
 services:
   odoo:
-    image: odoo:14
+    image: odoo:17.0
     ports:
       - "8069:8069"
     environment:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=odoo
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_USER=odoo
-      - DB_PASSWORD=odoo
-      - DB_NAME=odoo
     depends_on:
       - db
+    command: ["sh", "-c", "sleep 10 && /entrypoint.sh odoo"]
     volumes:
+
       - ./odoo_integration:/mnt/extra-addons
+      - ./config/odoo.conf:/etc/odoo/odoo.conf
+
 
   db:
-    image: postgres:13
+    image: postgres:15
     environment:
       POSTGRES_USER: odoo
       POSTGRES_PASSWORD: odoo
@@ -90,11 +97,13 @@ services:
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
       WORDPRESS_DB_NAME: wordpress
+    depends_on:
+      - wpdb
     volumes:
       - ./wordpress_plugin:/var/www/html/wp-content/plugins/your-plugin
 
   wpdb:
-    image: mysql:5.7
+    image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: wordpress
       MYSQL_DATABASE: wordpress
@@ -112,3 +121,4 @@ services:
 volumes:
   odoo-db-data:
   wp-db-data:
+

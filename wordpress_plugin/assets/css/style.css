@@ -1,0 +1,31 @@
+.odoo-integration-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.odoo-integration-table th,
+.odoo-integration-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.odoo-integration-table th {
+    background-color: #f2f2f2;
+}
+
+.odoo-integration-form label {
+    display: block;
+    margin-top: 10px;
+}
+
+.odoo-integration-form input[type="text"],
+.odoo-integration-form input[type="email"] {
+    width: 100%;
+    padding: 5px;
+    margin-top: 5px;
+}
+
+.odoo-integration-form input[type="submit"] {
+    margin-top: 10px;
+}

@@ -1,28 +1,25 @@
 <?php
-require_once(__DIR__ . '/../vendor/autoload.php');
+require_once(ABSPATH . 'wp-admin/includes/plugin.php');
+require_once(WP_PLUGIN_DIR . '/odoo-integration/vendor/autoload.php');
+
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 
 class RabbitMQ_Receiver {
-    public function start_consuming() {
-        $connection = new AMQPStreamConnection('rabbitmq', 5672, 'guest', 'guest');
+    public function receive($queue) {
+        $connection = new AMQPStreamConnection(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASS);
         $channel = $connection->channel();
 
-        $channel->queue_declare('pos_to_wordpress', false, true, false, false);
-        $channel->queue_declare('product_to_wordpress', false, true, false, false);
+        $channel->queue_declare($queue, false, true, false, false);
 
-        $callback = function($msg) {
+        $callback = function ($msg) {
             $data = json_decode($msg->body, true);
-            if ($msg->delivery_info['routing_key'] === 'pos_to_wordpress') {
-                $this->process_pos_order($data);
-            } elseif ($msg->delivery_info['routing_key'] === 'product_to_wordpress') {
-                $this->process_product($data);
-            }
+            $this->process_message($data);
+            $msg->ack();
         };
 
-        $channel->basic_consume('pos_to_wordpress', '', false, true, false, false, $callback);
-        $channel->basic_consume('product_to_wordpress', '', false, true, false, false, $callback);
+        $channel->basic_consume($queue, '', false, false, false, false, $callback);
 
-        while(count($channel->callbacks)) {
+        while ($channel->is_open()) {
             $channel->wait();
         }
 
@@ -30,17 +27,7 @@ class RabbitMQ_Receiver {
         $connection->close();
     }
 
-    private function process_pos_order($data) {
-        $order_manager = new Order_Manager();
-        $order_manager->create_or_update_order($data);
-    }
-
-    private function process_product($data) {
-        $product_manager = new Product_Manager();
-        if ($data['action'] === 'create' || $data['action'] === 'update') {
-            $product_manager->create_or_update_product($data);
-        } elseif ($data['action'] === 'delete') {
-            $product_manager->delete_product($data['id']);
-        }
+    private function process_message($data) {
+        // Process the message based on its type and action
     }
 }

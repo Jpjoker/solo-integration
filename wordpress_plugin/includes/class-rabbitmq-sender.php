@@ -1,25 +1,21 @@
 <?php
-require_once(__DIR__ . '/../vendor/autoload.php');
+require_once(ABSPATH . 'wp-admin/includes/plugin.php');
+require_once(WP_PLUGIN_DIR . '/odoo-integration/vendor/autoload.php');
+
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 
 class RabbitMQ_Sender {
-    private $connection;
-    private $channel;
+    public function send($queue, $data) {
+        $connection = new AMQPStreamConnection(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASS);
+        $channel = $connection->channel();
 
-    public function __construct() {
-        $this->connection = new AMQPStreamConnection('rabbitmq', 5672, 'guest', 'guest');
-        $this->channel = $this->connection->channel();
-        $this->channel->queue_declare('wordpress_to_odoo', false, true, false, false);
-    }
+        $channel->queue_declare($queue, false, true, false, false);
 
-    public function send($routing_key, $data) {
-        $msg = new AMQPMessage(json_encode($data), array('delivery_mode' => 2));
-        $this->channel->basic_publish($msg, '', $routing_key);
-    }
+        $msg = new AMQPMessage(json_encode($data));
+        $channel->basic_publish($msg, '', $queue);
 
-    public function __destruct() {
-        $this->channel->close();
-        $this->connection->close();
+        $channel->close();
+        $connection->close();
     }
 }

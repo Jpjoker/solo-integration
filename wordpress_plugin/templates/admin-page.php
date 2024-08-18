@@ -1,17 +1,19 @@
 <div class="wrap">
     <h1>Odoo Integration</h1>
-    <h2 class="nav-tab-wrapper">
-        <a href="#customers" class="nav-tab nav-tab-active">Customers</a>
-        <a href="#products" class="nav-tab">Products</a>
-        <a href="#orders" class="nav-tab">Orders</a>
-    </h2>
-    <div id="customers" class="tab-content">
-        <?php include('customer-list.php'); ?>
-    </div>
-    <div id="products" class="tab-content" style="display:none;">
-        <?php include('product-list.php'); ?>
-    </div>
-    <div id="orders" class="tab-content" style="display:none;">
-        <?php include('order-list.php'); ?>
+    <div id="odoo-integration-tabs">
+        <ul>
+            <li><a href="#customers">Customers</a></li>
+            <li><a href="#products">Products</a></li>
+            <li><a href="#orders">Orders</a></li>
+        </ul>
+        <div id="customers">
+            <?php include(plugin_dir_path(__FILE__) . 'customer-list.php'); ?>
+        </div>
+        <div id="products">
+            <?php include(plugin_dir_path(__FILE__) . 'product-list.php'); ?>
+        </div>
+        <div id="orders">
+            <?php include(plugin_dir_path(__FILE__) . 'order-list.php'); ?>
+        </div>
     </div>
 </div>

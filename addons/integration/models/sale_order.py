@@ -8,7 +8,7 @@ class SaleOrder(models.Model):
     wordpress_id = fields.Integer(string='WordPress ID')
 
     def send_to_wordpress(self, action):
-        connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+        connection = pika.BlockingConnection(pika.ConnectionParameters('192.168.56.103'))
         channel = connection.channel()
         channel.queue_declare(queue='wp_odoo_queue', durable=True)
 

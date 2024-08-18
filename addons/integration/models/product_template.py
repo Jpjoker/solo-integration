@@ -29,7 +29,7 @@ class ProductTemplate(models.Model):
 
     def send_to_wordpress(self, product, action):
         try:
-            connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+            connection = pika.BlockingConnection(pika.ConnectionParameters('192.168.56.103'))
             channel = connection.channel()
 
             product_data = {

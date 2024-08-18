@@ -12,7 +12,7 @@ class ResPartner(models.Model):
 
     def send_to_wordpress(self, action):
         try:
-            connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+            connection = pika.BlockingConnection(pika.ConnectionParameters('192.168.56.103'))
             channel = connection.channel()
             channel.queue_declare(queue='wp_odoo_queue', durable=True)
 
@@ -73,7 +73,7 @@ class ResPartner(models.Model):
     @api.model
     def process_rabbitmq_messages(self):
         try:
-            connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+            connection = pika.BlockingConnection(pika.ConnectionParameters('192.168.56.103'))
             channel = connection.channel()
             channel.queue_declare(queue='odoo_wp_queue', durable=True)
 

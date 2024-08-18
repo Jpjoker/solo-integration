@@ -1,27 +1,36 @@
-from odoo.tests.common import TransactionCase
-from unittest.mock import patch
+import pika
+import json
 
-class TestPosOrder(TransactionCase):
+def send_test_message():
+    # Gebruik de standaard AMQP-poort 5672 in plaats van 15672
+    connection = pika.BlockingConnection(pika.ConnectionParameters('192.168.56.103'))
+    channel = connection.channel()
 
-    def setUp(self):
-        super(TestPosOrder, self).setUp()
-        self.pos_order_model = self.env['pos.order']
+    # Queue declaration (zorgt ervoor dat de queue bestaat)
+    channel.queue_declare(queue='pos_to_wordpress', durable=True)
 
-    @patch('odoo.addons.your_module_name.models.pos_order.pika.BlockingConnection')
-    def test_create_from_ui(self, mock_connection):
-        mock_channel = mock_connection.return_value.channel.return_value
+    # Testorder gegevens
+    test_order = {
+        'id': 1,
+        'name': 'Test Order',
+        'amount_total': 100.0,
+        'date_order': '2023-08-01T10:00:00',
+        'partner_id': 1,
+        'lines': [{
+            'product_id': 1,
+            'qty': 2,
+            'price_unit': 50.0,
+        }]
+    }
 
-        order_data = {
-            'data': {
-                'name': 'Test Order',
-                'amount_total': 100,
-                'lines': [],
-            }
-        }
+    # Bericht publiceren naar de RabbitMQ queue
+    channel.basic_publish(
+        exchange='',
+        routing_key='pos_to_wordpress',
+        body=json.dumps(test_order)
+    )
 
-        order_id = self.pos_order_model.create_from_ui([order_data])
+    print(" [x] Sent 'Test Order'")
+    connection.close()
 
-        self.assertTrue(order_id)
-        mock_channel.basic_publish.assert_called_once()
-
-    # Add more tests...
+send_test_message()

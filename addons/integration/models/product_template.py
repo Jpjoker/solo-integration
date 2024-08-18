@@ -1,7 +1,9 @@
 from odoo import models, fields, api
 import pika
 import json
+import logging
 
+_logger = logging.getLogger(__name__)
 
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
@@ -26,21 +28,24 @@ class ProductTemplate(models.Model):
         return super(ProductTemplate, self).unlink()
 
     def send_to_wordpress(self, product, action):
-        connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
-        channel = connection.channel()
+        try:
+            connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+            channel = connection.channel()
 
-        product_data = {
-            'action': action,
-            'id': product.id,
-            'name': product.name,
-            'list_price': product.list_price,
-            'description': product.description,
-        }
+            product_data = {
+                'action': action,
+                'id': product.id,
+                'name': product.name,
+                'list_price': product.list_price,
+                'description': product.description,
+            }
 
-        channel.basic_publish(
-            exchange='',
-            routing_key='product_to_wordpress',
-            body=json.dumps(product_data)
-        )
+            channel.basic_publish(
+                exchange='',
+                routing_key='product_to_wordpress',
+                body=json.dumps(product_data)
+            )
 
-        connection.close()
+            connection.close()
+        except pika.exceptions.AMQPError as error:
+            _logger.error(f"Failed to send product to WordPress: {error}")

@@ -1,39 +1,49 @@
 <?php
 class Product_Manager {
-    private $rabbitmq_sender;
-
-    public function __construct() {
-        $this->rabbitmq_sender = new RabbitMQ_Sender();
-
-        add_action('wp_ajax_add_product', array($this, 'add_product'));
-        add_action('wp_ajax_edit_product', array($this, 'edit_product'));
-        add_action('wp_ajax_delete_product', array($this, 'delete_product'));
-        add_action('wp_ajax_get_products', array($this, 'get_products'));
-    }
-
-    public function add_product() {
-        $product_data = $_POST['product_data'];
-        // Validate and sanitize data
-        $this->rabbitmq_sender->send_product_data('create', $product_data);
-        wp_send_json_success('Product added successfully');
-    }
-
-    public function edit_product() {
-        $product_data = $_POST['product_data'];
-        // Validate and sanitize data
-        $this->rabbitmq_sender->send_product_data('update', $product_data);
-        wp_send_json_success('Product updated successfully');
-    }
-
-    public function delete_product() {
-        $product_id = $_POST['product_id'];
-        $this->rabbitmq_sender->send_product_data('delete', array('id' => $product_id));
-        wp_send_json_success('Product deleted successfully');
-    }
-
     public function get_products() {
-        // Implement logic to fetch products from Odoo
-        $products = $this->rabbitmq_sender->get_products_from_odoo();
-        wp_send_json_success($products);
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'odoo_products';
+        return $wpdb->get_results("SELECT * FROM $table_name");
+    }
+
+    public function add_product($product_data) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'odoo_products';
+        $result = $wpdb->insert($table_name, $product_data);
+        if ($result) {
+            $this->send_to_odoo('create', $product_data);
+            return $wpdb->insert_id;
+        }
+        return false;
+    }
+
+    public function edit_product($product_data) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'odoo_products';
+        $result = $wpdb->update($table_name, $product_data, array('id' => $product_data['id']));
+        if ($result) {
+            $this->send_to_odoo('update', $product_data);
+            return true;
+        }
+        return false;
+    }
+
+    public function delete_product($product_id) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'odoo_products';
+        $result = $wpdb->delete($table_name, array('id' => $product_id));
+        if ($result) {
+            $this->send_to_odoo('delete', array('id' => $product_id));
+            return true;
+        }
+        return false;
+    }
+
+    private function send_to_odoo($action, $data) {
+        $rabbitmq_sender = new RabbitMQ_Sender();
+        $rabbitmq_sender->send('product_to_odoo', array(
+            'action' => $action,
+            'data' => $data
+        ));
     }
 }

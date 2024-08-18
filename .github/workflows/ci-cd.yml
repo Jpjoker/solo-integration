@@ -38,5 +38,5 @@ jobs:
         ssh -o StrictHostKeyChecking=no -i private_key ${USER}@${HOST} '
           cd /path/to/your/project &&
           git pull origin main &&
-          # Add any necessary deployment commands here
+          docker-compose up -d --build
         '

@@ -1,35 +1,46 @@
 <?php
+require_once(__DIR__ . '/../vendor/autoload.php');
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+
 class RabbitMQ_Receiver {
-    private $connection;
-    private $channel;
+    public function start_consuming() {
+        $connection = new AMQPStreamConnection('rabbitmq', 5672, 'guest', 'guest');
+        $channel = $connection->channel();
 
-    public function __construct() {
-        $this->connection = new AMQPStreamConnection('localhost', 5672, 'guest', 'guest');
-        $this->channel = $this->connection->channel();
-        $this->channel->queue_declare('wp_odoo_queue', false, true, false, false);
-    }
+        $channel->queue_declare('pos_to_wordpress', false, true, false, false);
+        $channel->queue_declare('product_to_wordpress', false, true, false, false);
 
-    public function get_customers_from_odoo() {
-        $customers = array();
-        $callback = function($msg) use (&$customers) {
+        $callback = function($msg) {
             $data = json_decode($msg->body, true);
-            if ($data['action'] === 'customers_list') {
-                $customers = $data['data'];
+            if ($msg->delivery_info['routing_key'] === 'pos_to_wordpress') {
+                $this->process_pos_order($data);
+            } elseif ($msg->delivery_info['routing_key'] === 'product_to_wordpress') {
+                $this->process_product($data);
             }
-            $msg->ack();
         };
 
-        $this->channel->basic_consume('wp_odoo_queue', '', false, false, false, false, $callback);
+        $channel->basic_consume('pos_to_wordpress', '', false, true, false, false, $callback);
+        $channel->basic_consume('product_to_wordpress', '', false, true, false, false, $callback);
 
-        while (count($customers) === 0) {
-            $this->channel->wait();
+        while(count($channel->callbacks)) {
+            $channel->wait();
         }
 
-        return $customers;
+        $channel->close();
+        $connection->close();
     }
 
-    public function __destruct() {
-        $this->channel->close();
-        $this->connection->close();
+    private function process_pos_order($data) {
+        $order_manager = new Order_Manager();
+        $order_manager->create_or_update_order($data);
+    }
+
+    private function process_product($data) {
+        $product_manager = new Product_Manager();
+        if ($data['action'] === 'create' || $data['action'] === 'update') {
+            $product_manager->create_or_update_product($data);
+        } elseif ($data['action'] === 'delete') {
+            $product_manager->delete_product($data['id']);
+        }
     }
 }

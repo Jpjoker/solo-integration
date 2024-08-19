@@ -41,7 +41,8 @@ services:
     depends_on:
       - wpdb
     volumes:
-      - ./wordpress_plugin:/var/www/html/wp-content/plugins/your-plugin
+      - wordpress_data:/var/www/html
+      - ./odoo-wp-integration/plugins/odoo-integration:/var/www/html/wp-content/plugins/odoo-integration
 
   wpdb:
     image: mysql:8.0
@@ -61,5 +62,7 @@ services:
 
 volumes:
   odoo-db-data:
+
+  wordpress_data:
   wp-db-data:
 
